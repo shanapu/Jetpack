@@ -55,7 +55,7 @@ public Plugin myinfo =
 	name = "Jetpack for CSGO",
 	author = "shanapu, FrozDark & gubka",
 	description = "A jetpack for csgo without need of zombie",
-	version = "1.0",
+	version = "1.1",
 	url = "https://github.com/shanapu"
 };
 
@@ -166,10 +166,10 @@ public Action Command_JetpackOFF(int client, int args)
 
 public Action Timer_Fly(Handle tmr, int client)
 {
-	if (!gc_bEnable.BoolValue || !IsPlayerAlive(client) || g_bDelay[client] || (gc_bAdminsOnly.BoolValue && !g_bIsAdmin[client]))
+	if (!gc_bEnable.BoolValue || !IsClientConnected(client) || g_bDelay[client] || (gc_bAdminsOnly.BoolValue && !g_bIsAdmin[client]))
 		return Plugin_Handled;
 
-	if ((GetClientTeam(client) != CS_TEAM_CT && gc_iTeam.IntValue == 1) || (GetClientTeam(client) != CS_TEAM_T && gc_iTeam.IntValue == 2))
+	if ((GetClientTeam(client) != CS_TEAM_CT && gc_iTeam.IntValue == 1) || (GetClientTeam(client) != CS_TEAM_T && gc_iTeam.IntValue == 2) || !IsPlayerAlive(client))
 		return Plugin_Handled;
 
 	if (0 <= g_iJumps[client] <= gc_fJetPackMax.IntValue)
