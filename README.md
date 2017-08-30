@@ -65,4 +65,11 @@ sm_jetpack_reloadtime "60"
 // Minimum: "1.000000"
 // Maximum: "3.000000"
 sm_jetpack_team "3"
+
+// 0 - disabled, 1 - enable effect & particle
+// -
+// Default: "1"
+// Minimum: "0.000000"
+// Maximum: "1.000000"
+sm_jetpack_effect "1"
 ```

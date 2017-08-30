@@ -39,6 +39,7 @@ ConVar gc_fJetPackBoost;
 ConVar gc_fJetPackMax;
 ConVar gc_iJetPackAngle;
 ConVar gc_bCommand;
+ConVar gc_bEffect;
 
 bool g_bDelay[MAXPLAYERS+1];
 bool g_bIsAdmin[MAXPLAYERS+1];
@@ -55,7 +56,7 @@ public Plugin myinfo =
 	name = "Jetpack for CSGO",
 	author = "shanapu, FrozDark & gubka",
 	description = "A jetpack for csgo without need of zombie",
-	version = "1.1",
+	version = "1.2",
 	url = "https://github.com/shanapu"
 };
 
@@ -74,6 +75,7 @@ public void OnPluginStart()
 	gc_fJetPackBoost = CreateConVar("sm_jetpack_boost", "400.0", "The amount of boost to apply to JetPack.", _, true, 100.0);
 	gc_iJetPackAngle = CreateConVar("sm_jetpack_angle", "50", "The angle of boost to apply to JetPack.", _, true, 10.0, true, 80.0);
 	gc_fJetPackMax = CreateConVar("sm_jetpack_max", "10", "Time in seconds of using JetPacks.", _, true, 0.0);
+	gc_bEffect = CreateConVar("sm_jetpack_effect", "1", "0 - disabled, 1 - enable effect & particle", _, true, 0.0, true, 1.0);
 
 	HookEvent("player_death", OnPlayerDeath);
 	HookEvent("player_spawn", OnPlayerSpawn);
@@ -150,7 +152,7 @@ public Action Command_JetpackON(int client, int args)
 {
 	if (gc_bCommand.BoolValue)
 	{
-		Timer_Client[client] = CreateTimer(0.1, Timer_Fly, client, TIMER_REPEAT);
+		Timer_Client[client] = CreateTimer(0.1, Timer_Fly, GetClientUserId(client), TIMER_REPEAT);
 	}
 }
 
@@ -164,8 +166,10 @@ public Action Command_JetpackOFF(int client, int args)
 }
 
 
-public Action Timer_Fly(Handle tmr, int client)
+public Action Timer_Fly(Handle tmr, int userid)
 {
+	int client = GetClientOfUserId(userid);
+
 	if (!gc_bEnable.BoolValue || !IsClientConnected(client) || g_bDelay[client] || (gc_bAdminsOnly.BoolValue && !g_bIsAdmin[client]))
 		return Plugin_Handled;
 
@@ -201,9 +205,9 @@ public Action Timer_Fly(Handle tmr, int client)
 		TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, Velocity);
 
 		g_bDelay[client] = true;
-		CreateTimer(0.1, DelayOff, client);
+		CreateTimer(0.1, DelayOff, GetClientUserId(client));
 
-		CreateEffect(client, ClientAbsOrigin, ClientEyeAngle);
+		if (gc_bEffect.BoolValue) CreateEffect(client, ClientAbsOrigin, ClientEyeAngle);
 
 		if (g_iJumps[client] == gc_fJetPackMax.IntValue && gc_fReloadDelay.FloatValue)
 		{
@@ -263,9 +267,9 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, Velocity);
 
 			g_bDelay[client] = true;
-			CreateTimer(0.1, DelayOff, client);
+			CreateTimer(0.1, DelayOff, GetClientUserId(client));
 
-			CreateEffect(client, ClientAbsOrigin, ClientEyeAngle);
+			if (gc_bEffect.BoolValue) CreateEffect(client, ClientAbsOrigin, ClientEyeAngle);
 
 			if (g_iJumps[client] == gc_fJetPackMax.IntValue && gc_fReloadDelay.FloatValue)
 			{
@@ -363,8 +367,10 @@ public Action Killfire(Handle timer, Handle firedata)
 	}
 }
 
-public Action DelayOff(Handle timer, any client)
+public Action DelayOff(Handle timer, any userid)
 {
+	int client = GetClientOfUserId(userid);
+
 	g_bDelay[client] = false;
 }
 
