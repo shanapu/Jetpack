@@ -24,7 +24,6 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <cstrike>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -33,6 +32,7 @@ ConVar gc_bEnable;
 ConVar gc_bAdminsOnly;
 ConVar gc_bAdminsUnlimited;
 ConVar gc_sAdminFlag;
+ConVar gc_sPrefix;
 ConVar gc_iTeam;
 ConVar gc_fReloadDelay;
 ConVar gc_fJetPackBoost;
@@ -49,38 +49,43 @@ Handle g_hTimer[MAXPLAYERS+1];
 int g_iJumps[MAXPLAYERS+1];
 int g_iFirstSpawn[MAXPLAYERS+1] = false;
 
-char g_sAdminFlag[64];
+char g_sAdminFlag[32];
+char g_sPrefix[32];
 
 public Plugin myinfo =
 {
-	name = "Jetpack for CSGO",
+	name = "Jetpack",
 	author = "shanapu, FrozDark & gubka",
-	description = "A jetpack for csgo without need of zombie",
-	version = "1.2",
+	description = "Yet another jetpack plugin for sourcemod",
+	version = "1.3",
 	url = "https://github.com/shanapu"
 };
 
 public void OnPluginStart()
 {
+	LoadTranslations("jetpack.phrases");
+
 	RegConsoleCmd("+jetpack", Command_JetpackON);
 	RegConsoleCmd("-jetpack", Command_JetpackOFF);
 
-	gc_bEnable = CreateConVar("sm_jetpack_enabled", "1", "Enables JetPack.", _, true, 0.0, true, 1.0);
-	gc_bCommand = CreateConVar("sm_jetpack_cmd", "0", "0 - DUCK & JUMP, 1 - +/-jetpack", _, true, 0.0, true, 1.0);
-	gc_bAdminsOnly = CreateConVar("sm_jetpack_admins_only", "0", "Only admins will be able to use JetPack.", _, true, 0.0, true, 1.0);
-	gc_bAdminsUnlimited = CreateConVar("sm_jetpack_admins_unlimited", "0", "Allow admins to have unlimited JetPack.", _, true, 0.0, true, 1.0);
-	gc_sAdminFlag = CreateConVar("sm_jetpack_admins_flag", "b,r", "Admin flag to access to the JetPack.");
-	gc_iTeam = CreateConVar("sm_jetpack_team", "3", "Which team should have access to jetpack? 1 - CT only / 2- T only / 3 - both", _, true, 1.0, true, 3.0);
-	gc_fReloadDelay = CreateConVar("sm_jetpack_reloadtime", "60", "Time in seconds to reload JetPack.", _, true, 1.0);
-	gc_fJetPackBoost = CreateConVar("sm_jetpack_boost", "400.0", "The amount of boost to apply to JetPack.", _, true, 100.0);
-	gc_iJetPackAngle = CreateConVar("sm_jetpack_angle", "50", "The angle of boost to apply to JetPack.", _, true, 10.0, true, 80.0);
-	gc_fJetPackMax = CreateConVar("sm_jetpack_max", "10", "Time in seconds of using JetPacks.", _, true, 0.0);
-	gc_bEffect = CreateConVar("sm_jetpack_effect", "1", "0 - disabled, 1 - enable effect & particle", _, true, 0.0, true, 1.0);
+	CreateConVar("jetpack_version", "1.3", "Version of this SourceMod plugin", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	gc_bEnable = CreateConVar("jetpack_enabled", "1", "Enables JetPack.", _, true, 0.0, true, 1.0);
+	gc_bCommand = CreateConVar("jetpack_cmd", "0", "0 - DUCK & JUMP, 1 - +/-jetpack", _, true, 0.0, true, 1.0);
+	gc_bAdminsOnly = CreateConVar("jetpack_admins_only", "0", "Only admins will be able to use JetPack.", _, true, 0.0, true, 1.0);
+	gc_bAdminsUnlimited = CreateConVar("jetpack_admins_unlimited", "0", "Allow admins to have unlimited JetPack.", _, true, 0.0, true, 1.0);
+	gc_sAdminFlag = CreateConVar("jetpack_admins_flag", "b,r", "Admin flags to access to the JetPack.");
+	gc_iTeam = CreateConVar("jetpack_team", "3", "Which team should have access to jetpack? 1 - CT/Blu only / 2- T/Red only / 3 - both", _, true, 1.0, true, 3.0);
+	gc_fReloadDelay = CreateConVar("jetpack_reloadtime", "60", "Time in seconds to reload JetPack.", _, true, 1.0);
+	gc_fJetPackBoost = CreateConVar("jetpack_boost", "400.0", "The amount of boost to apply to JetPack.", _, true, 100.0);
+	gc_iJetPackAngle = CreateConVar("jetpack_angle", "50", "The angle of boost to apply to JetPack.", _, true, 10.0, true, 80.0);
+	gc_fJetPackMax = CreateConVar("jetpack_max", "10", "Time in seconds of using JetPacks.", _, true, 0.0);
+	gc_bEffect = CreateConVar("jetpack_effect", "1", "0 - disabled, 1 - enable effect & particle", _, true, 0.0, true, 1.0);
+	gc_sPrefix = CreateConVar("jetpack_prefix", "[SM]", "Chat prefix for first spawn message");
 
 	HookEvent("player_death", OnPlayerDeath);
 	HookEvent("player_spawn", OnPlayerSpawn);
 
-	AutoExecConfig(true, "JetPack");
+	AutoExecConfig(true, "jetpack");
 
 	for (int client = 1; client <= MaxClients; client++)
 	{
@@ -89,8 +94,10 @@ public void OnPluginStart()
 	}
 
 	HookConVarChange(gc_sAdminFlag, OnSettingChanged);
+	HookConVarChange(gc_sPrefix, OnSettingChanged);
 
 	gc_sAdminFlag.GetString(g_sAdminFlag, sizeof(g_sAdminFlag));
+	gc_sPrefix.GetString(g_sPrefix, sizeof(g_sPrefix));
 }
 
 public void OnSettingChanged(Handle convar, const char[] oldValue, const char[] newValue)
@@ -98,6 +105,10 @@ public void OnSettingChanged(Handle convar, const char[] oldValue, const char[] 
 	if (convar == gc_sAdminFlag)
 	{
 		strcopy(g_sAdminFlag, sizeof(g_sAdminFlag), newValue);
+	}
+	else if (convar == gc_sPrefix)
+	{
+		strcopy(g_sPrefix, sizeof(g_sPrefix), newValue);
 	}
 }
 
@@ -143,7 +154,7 @@ public void OnPlayerSpawn(Handle event, const char [] name, bool dontBroadcast)
 
 	g_iFirstSpawn[client] = true;
 
-	PrintToChat(client, "Jetpack is enabled: to use", gc_bCommand.BoolValue?"bind +jetpack":"press CTRL + SPACE (duck+jump)");
+	PrintToChat(client, "%s %t %t", g_sPrefix, "Jetpack is enabled", gc_bCommand.BoolValue ? "use +jetpack" : "use duck+jump");
 }
 
 Handle Timer_Client[MAXPLAYERS+1];
@@ -173,7 +184,7 @@ public Action Timer_Fly(Handle tmr, int userid)
 	if (!gc_bEnable.BoolValue || !IsClientConnected(client) || g_bDelay[client] || (gc_bAdminsOnly.BoolValue && !g_bIsAdmin[client]))
 		return Plugin_Handled;
 
-	if ((GetClientTeam(client) != CS_TEAM_CT && gc_iTeam.IntValue == 1) || (GetClientTeam(client) != CS_TEAM_T && gc_iTeam.IntValue == 2) || !IsPlayerAlive(client))
+	if ((GetClientTeam(client) != 2 && gc_iTeam.IntValue == 1) || (GetClientTeam(client) != 1 && gc_iTeam.IntValue == 2) || !IsPlayerAlive(client))
 		return Plugin_Handled;
 
 	if (0 <= g_iJumps[client] <= gc_fJetPackMax.IntValue)
@@ -217,7 +228,7 @@ public Action Timer_Fly(Handle tmr, int userid)
 			}
 			Timer_Client[client] = null;
 			g_hTimer[client] = CreateTimer(gc_fReloadDelay.FloatValue, Reload, client);
-			PrintCenterText(client, "Jetpack Empty");
+			PrintCenterText(client, "%t", "Jetpack is empty");
 			return Plugin_Handled;
 		}
 	}
@@ -233,7 +244,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	if (!gc_bEnable.BoolValue || !IsPlayerAlive(client) || g_bDelay[client] || (gc_bAdminsOnly.BoolValue && !g_bIsAdmin[client]))
 		return Plugin_Continue;
 
-	if ((GetClientTeam(client) != CS_TEAM_CT && gc_iTeam.IntValue == 1) || (GetClientTeam(client) != CS_TEAM_T && gc_iTeam.IntValue == 2))
+	if ((GetClientTeam(client) != 2 && gc_iTeam.IntValue == 1) || (GetClientTeam(client) != 1 && gc_iTeam.IntValue == 2))
 		return Plugin_Continue;
 
 	if (buttons & IN_JUMP && buttons & IN_DUCK)
@@ -269,12 +280,12 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			g_bDelay[client] = true;
 			CreateTimer(0.1, DelayOff, GetClientUserId(client));
 
-			if (gc_bEffect.BoolValue) CreateEffect(client, ClientAbsOrigin, ClientEyeAngle);
+			CreateEffect(client, ClientAbsOrigin, ClientEyeAngle);
 
 			if (g_iJumps[client] == gc_fJetPackMax.IntValue && gc_fReloadDelay.FloatValue)
 			{
 				g_hTimer[client] = CreateTimer(gc_fReloadDelay.FloatValue, Reload, client);
-				PrintCenterText(client, "Jetpack Empty");
+				PrintCenterText(client, "%t", "Jetpack is empty");
 			}
 		}
 	}
@@ -283,6 +294,9 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 void CreateEffect(int client, float vecorigin[3], float vecangle[3])
 {
+	if (!gc_bEffect.BoolValue)
+		return;
+
 	vecangle[0] = 110.0;
 	vecorigin[2] += 25.0;
 
@@ -379,7 +393,7 @@ public Action Reload(Handle timer, any client)
 	if (g_hTimer[client] != INVALID_HANDLE)
 	{
 		g_iJumps[client] = 0;
-		PrintCenterText(client, "Jetpack Reloaded");
+		PrintCenterText(client, "%t", "Jetpack is reloaded");
 		g_hTimer[client] = INVALID_HANDLE;
 	}
 }

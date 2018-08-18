@@ -1,0 +1,27 @@
+﻿"Phrases"
+{
+	"Jetpack is enabled"
+	{
+		"en" "Jetpack is enabled:"
+	}
+	"use +jetpack"
+	{
+		"en" "to use bind +jetpack"
+	}
+	"use duck+jump"
+	{
+		"en" "to use press CTRL + SPACE (duck+jump)"
+	}
+	"Jetpack is enabled"
+	{
+		"en" "Jetpack is enabled:"
+	}
+	"Jetpack is empty"
+	{
+		"en" "Jetpack Empty"
+	}
+	"Jetpack is reloaded"
+	{
+		"en" "Jetpack Reloaded"
+	}
+}
