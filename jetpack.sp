@@ -57,8 +57,8 @@ public Plugin myinfo =
 	name = "Jetpack",
 	author = "shanapu, FrozDark & gubka",
 	description = "Yet another jetpack plugin for sourcemod",
-	version = "1.3",
-	url = "https://github.com/shanapu"
+	version = "1.4",
+	url = "https://github.com/shanapu/"
 };
 
 public void OnPluginStart()
@@ -184,7 +184,7 @@ public Action Timer_Fly(Handle tmr, int userid)
 	if (!gc_bEnable.BoolValue || !IsClientConnected(client) || g_bDelay[client] || (gc_bAdminsOnly.BoolValue && !g_bIsAdmin[client]))
 		return Plugin_Handled;
 
-	if ((GetClientTeam(client) != 2 && gc_iTeam.IntValue == 1) || (GetClientTeam(client) != 1 && gc_iTeam.IntValue == 2) || !IsPlayerAlive(client))
+	if ((GetClientTeam(client) != 3 && gc_iTeam.IntValue == 1) || (GetClientTeam(client) != 2 && gc_iTeam.IntValue == 2) || !IsPlayerAlive(client))
 		return Plugin_Handled;
 
 	if (0 <= g_iJumps[client] <= gc_fJetPackMax.IntValue)
