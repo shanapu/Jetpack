@@ -57,7 +57,7 @@ public Plugin myinfo =
 	name = "Jetpack",
 	author = "shanapu, FrozDark & gubka",
 	description = "Yet another jetpack plugin for sourcemod",
-	version = "1.4",
+	version = "1.4.1",
 	url = "https://github.com/shanapu/"
 };
 
@@ -68,7 +68,7 @@ public void OnPluginStart()
 	RegConsoleCmd("+jetpack", Command_JetpackON);
 	RegConsoleCmd("-jetpack", Command_JetpackOFF);
 
-	CreateConVar("jetpack_version", "1.3", "Version of this SourceMod plugin", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	CreateConVar("jetpack_version", "1.4.1", "Version of this SourceMod plugin", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	gc_bEnable = CreateConVar("jetpack_enabled", "1", "Enables JetPack.", _, true, 0.0, true, 1.0);
 	gc_bCommand = CreateConVar("jetpack_cmd", "0", "0 - DUCK & JUMP, 1 - +/-jetpack", _, true, 0.0, true, 1.0);
 	gc_bAdminsOnly = CreateConVar("jetpack_admins_only", "0", "Only admins will be able to use JetPack.", _, true, 0.0, true, 1.0);
@@ -135,19 +135,19 @@ public void OnClientDisconnect_Post(int client)
 	}
 }
 
-public void OnPlayerDeath(Handle event, const char [] name, bool dontBroadcast)
+public void OnPlayerDeath(Event event, const char [] name, bool dontBroadcast)
 {
 	if (!gc_bEnable.BoolValue)
 		return;
 
-	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if (g_bDelay[client])
 		OnClientDisconnect_Post(client);
 }
 
-public void OnPlayerSpawn(Handle event, const char [] name, bool dontBroadcast)
+public void OnPlayerSpawn(Event event, const char [] name, bool dontBroadcast)
 {
-	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 
 	if (g_iFirstSpawn[client])
 		return;
@@ -244,7 +244,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	if (!gc_bEnable.BoolValue || !IsPlayerAlive(client) || g_bDelay[client] || (gc_bAdminsOnly.BoolValue && !g_bIsAdmin[client]))
 		return Plugin_Continue;
 
-	if ((GetClientTeam(client) != 2 && gc_iTeam.IntValue == 1) || (GetClientTeam(client) != 1 && gc_iTeam.IntValue == 2))
+	if ((GetClientTeam(client) != 3 && gc_iTeam.IntValue == 1) || (GetClientTeam(client) != 2 && gc_iTeam.IntValue == 2))
 		return Plugin_Continue;
 
 	if (buttons & IN_JUMP && buttons & IN_DUCK)
