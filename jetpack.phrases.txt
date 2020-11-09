@@ -3,25 +3,31 @@
 	"Jetpack is enabled"
 	{
 		"en" "Jetpack is enabled:"
+		"ru" "Реактивный ранец включен:"
 	}
 	"use +jetpack"
 	{
 		"en" "to use bind +jetpack"
+		"ru" "чтобы использовать, привяжите команду +jetpack"
 	}
 	"use duck+jump"
 	{
 		"en" "to use press CTRL + SPACE (duck+jump)"
+		"ru" "для использования нажмите CTRL + ПРОБЕЛ (присесть+прыжок)"
 	}
 	"Jetpack is enabled"
 	{
 		"en" "Jetpack is enabled:"
+		"ru" "Реактивный ранец включен:"
 	}
 	"Jetpack is empty"
 	{
 		"en" "Jetpack Empty"
+		"ru" "Реактивный ранец пуст"
 	}
 	"Jetpack is reloaded"
 	{
 		"en" "Jetpack Reloaded"
+		"ru" "Реактивный ранец перезаряжен"
 	}
 }
